@@ -8,6 +8,8 @@ public:
     ~GranularReverbEditor() override = default;
 
 private:
+    void paint(juce::Graphics&) override;
+
     juce::ComboBox presetBox;
     juce::Slider sDecay, sEvolve, sGrain, sRate, sFrz, sWidth, sDelay, sTone;
     juce::Slider sDry, sWet;

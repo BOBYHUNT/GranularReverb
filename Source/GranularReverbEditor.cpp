@@ -1,19 +1,27 @@
 #include "GranularReverbEditor.h"
 
-// Presets: decay, evolve, grainSize, rate, freeze, width, delay, tone, dry, wet
 static const char* presetNames[] = {
     "Custom", "Tight", "Room", "Hall", "Frozen", "Drums", "Cloud", "Dark"
 };
 static const float presetVals[][10] = {
     {0,0,0,0,0,0,0,0,0,0},
-    { 0.2f, 0.1f,  60.0f, 14.0f, 0.0f, 0.2f, 0.7f, 0.2f, 0.8f, 0.4f},  // Tight
-    { 0.8f, 0.3f, 150.0f,  6.0f, 0.0f, 0.5f, 1.0f, 0.4f, 0.6f, 0.6f},  // Room
-    { 2.0f, 0.5f, 250.0f,  3.0f, 0.0f, 0.8f, 1.5f, 0.6f, 0.4f, 0.8f},  // Hall
-    { 2.5f, 0.2f, 350.0f,  2.0f, 1.0f, 0.7f, 1.2f, 0.5f, 0.3f, 0.9f},  // Frozen
-    { 0.1f, 0.6f,  40.0f, 18.0f, 0.0f, 0.1f, 0.5f, 0.1f, 0.9f, 0.3f},  // Drums
-    { 3.0f, 0.9f, 450.0f,  1.0f, 0.0f, 0.9f, 2.5f, 0.7f, 0.2f, 0.9f},  // Cloud
-    { 1.5f, 0.4f, 200.0f,  4.0f, 0.0f, 0.6f, 2.0f, 0.9f, 0.4f, 0.8f}   // Dark
+    { 0.2f, 0.1f,  60.0f, 14.0f, 0.0f, 0.2f, 0.7f, 0.2f, 0.8f, 0.4f},
+    { 0.8f, 0.3f, 150.0f,  6.0f, 0.0f, 0.5f, 1.0f, 0.4f, 0.6f, 0.6f},
+    { 2.0f, 0.5f, 250.0f,  3.0f, 0.0f, 0.8f, 1.5f, 0.6f, 0.4f, 0.8f},
+    { 2.5f, 0.2f, 350.0f,  2.0f, 1.0f, 0.7f, 1.2f, 0.5f, 0.3f, 0.9f},
+    { 0.1f, 0.6f,  40.0f, 18.0f, 0.0f, 0.1f, 0.5f, 0.1f, 0.9f, 0.3f},
+    { 3.0f, 0.9f, 450.0f,  1.0f, 0.0f, 0.9f, 2.5f, 0.7f, 0.2f, 0.9f},
+    { 1.5f, 0.4f, 200.0f,  4.0f, 0.0f, 0.6f, 2.0f, 0.9f, 0.4f, 0.8f}
 };
+
+static const char* paramNames[8] = {
+    "Decay", "Evolve", "Grain Size", "Rate", "Freeze", "Width", "Delay", "Tone"
+};
+
+static juce::FontOptions makeFont(float size)
+{
+    return juce::FontOptions("Inter", size, juce::Font::plain);
+}
 
 GranularReverbEditor::GranularReverbEditor(GranularReverbProcessor& p)
     : juce::AudioProcessorEditor(&p),
@@ -36,24 +44,67 @@ GranularReverbEditor::GranularReverbEditor(GranularReverbProcessor& p)
     presetBox.onChange = [this] { applyPreset(presetBox.getSelectedId() - 1); };
     addAndMakeVisible(presetBox);
 
-    // 8 sliders principaux
     juce::Slider* main[8] = {&sDecay, &sEvolve, &sGrain, &sRate, &sFrz, &sWidth, &sDelay, &sTone};
+    const int startY = 46;
+    const int rowH = 38;
+
     for (int i = 0; i < 8; ++i)
     {
         main[i]->setSliderStyle(juce::Slider::LinearHorizontal);
-        main[i]->setBounds(10, 44 + i * 28, 200, 20);
+        main[i]->setBounds(10, startY + i * rowH + 16, 130, 20);
+        main[i]->setTooltip(paramNames[i]);
+        main[i]->onValueChange = [this] { repaint(); };
         addAndMakeVisible(main[i]);
     }
 
-    // Dry/Wet séparés en bas
+    int yDW = startY + 8 * rowH + 6;
+
     sDry.setSliderStyle(juce::Slider::LinearHorizontal);
-    sDry.setBounds(10, 276, 95, 20);
-    sWet.setSliderStyle(juce::Slider::LinearHorizontal);
-    sWet.setBounds(115, 276, 95, 20);
+    sDry.setBounds(10, yDW + 16, 95, 20);
+    sDry.setTooltip("Dry");
+    sDry.onValueChange = [this] { repaint(); };
     addAndMakeVisible(sDry);
+
+    sWet.setSliderStyle(juce::Slider::LinearHorizontal);
+    sWet.setBounds(115, yDW + 16, 95, 20);
+    sWet.setTooltip("Wet");
+    sWet.onValueChange = [this] { repaint(); };
     addAndMakeVisible(sWet);
 
-    setSize(230, 306);
+    setSize(230, yDW + 58);
+}
+
+void GranularReverbEditor::paint(juce::Graphics& g)
+{
+    g.fillAll(juce::Colours::black);
+    g.setColour(juce::Colours::white);
+
+    const int startY = 46;
+    const int rowH = 38;
+
+    auto fontName = makeFont(14.0f);
+    auto fontVal  = makeFont(13.0f);
+
+    juce::Slider* main[8] = {&sDecay, &sEvolve, &sGrain, &sRate, &sFrz, &sWidth, &sDelay, &sTone};
+
+    for (int i = 0; i < 8; ++i)
+    {
+        int y = startY + i * rowH;
+        g.setFont(fontName);
+        g.drawText(paramNames[i], 10, y, 100, 14, juce::Justification::centredLeft);
+        g.setFont(fontVal);
+        g.drawText(juce::String(main[i]->getValue(), 2), 145, y + 16, 60, 16, juce::Justification::centredRight);
+    }
+
+    int yDW = startY + 8 * rowH + 6;
+
+    g.setFont(fontName);
+    g.drawText("Dry", 10, yDW, 40, 14, juce::Justification::centredLeft);
+    g.drawText("Wet", 115, yDW, 40, 14, juce::Justification::centredLeft);
+
+    g.setFont(fontVal);
+    g.drawText(juce::String(sDry.getValue(), 2), 10, yDW + 38, 95, 14, juce::Justification::centred);
+    g.drawText(juce::String(sWet.getValue(), 2), 115, yDW + 38, 95, 14, juce::Justification::centred);
 }
 
 void GranularReverbEditor::setEnabled(bool on)
@@ -83,4 +134,6 @@ void GranularReverbEditor::applyPreset(int idx)
     proc.apvts.getParameter("tone")->setValueNotifyingHost(presetVals[idx][7]);
     proc.apvts.getParameter("dry")->setValueNotifyingHost(presetVals[idx][8]);
     proc.apvts.getParameter("wet")->setValueNotifyingHost(presetVals[idx][9]);
+    setEnabled(true);
+    repaint();
 }
