@@ -17,7 +17,7 @@ jobs:
         run: git clone --depth 1 --recurse-submodules https://github.com/juce-framework/JUCE.git
 
       - name: Configure CMake
-        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="/DJUCE_DIRECT2D=0"
 
       - name: Build
         run: cmake --build build --parallel
